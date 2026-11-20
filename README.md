@@ -44,13 +44,13 @@ Evaluated against the **50-Scenario Reproducible Failure Benchmark Catalog** (`b
 
 | Evaluation Metric | Target | Invariant Score | Assessment |
 |---|---|---|---|
-| **Detection Recall** | ≥ 80% | **94.0%** | ✅ Exceeded |
+| **Detection Recall** | ≥ 80% | **100.0%** | ✅ Exceeded (50/50 detected) |
 | **Detection Precision** | ≥ 95% | **100.0%** | ✅ Zero False Positives |
 | **Root Cause Accuracy** | ≥ 70% | **100.0%** | ✅ Cites Verifiable Evidence |
-| **P50 Detection Latency** | < 100 ms | **0.08 ms** | ✅ Real-Time SQL Engine |
-| **P95 Detection Latency** | < 500 ms | **0.17 ms** | ✅ Sub-Millisecond Speed |
-| **P50 Investigation Latency** | < 1000 ms | **24.5 ms** | ✅ Low Latency Pipeline |
-| **Mean Cost Per Investigation** | < $0.05 | **$0.005678** | ✅ Cost Optimized |
+| **P50 Detection Latency** | < 100 ms | **0.09 ms** | ✅ Real-Time SQL Engine |
+| **P95 Detection Latency** | < 500 ms | **0.21 ms** | ✅ Sub-Millisecond Speed |
+| **P50 Investigation Latency** | < 1000 ms | **51.5 ms** | ✅ Low Latency Pipeline |
+| **Mean Cost Per Investigation** | < $0.05 | **$0.00569** | ✅ Cost Optimized |
 | **Duplicate Prevention** | 100% | **100.0%** | ✅ Zero Duplicate Operations |
 
 ---
