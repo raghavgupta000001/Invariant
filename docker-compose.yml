@@ -1,0 +1,179 @@
+version: "3.9"
+
+networks:
+  invariant-net:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: invariant
+      POSTGRES_PASSWORD: invariant
+      POSTGRES_DB: orders_db
+    volumes:
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - invariant-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U invariant -d orders_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pubsub-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+    ports:
+      - "8085:8085"
+    environment:
+      PUBSUB_EMULATOR_HOST: 0.0.0.0:8085
+    networks:
+      - invariant-net
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql://invariant:invariant@postgres:5432/orders_db
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      PUBSUB_PROJECT_ID: invariant-local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_started
+    networks:
+      - invariant-net
+
+  payment-service:
+    build: ./payment-service
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgresql://invariant:invariant@postgres:5432/payments_db
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      PUBSUB_PROJECT_ID: invariant-local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_started
+    networks:
+      - invariant-net
+
+  erp-service:
+    build: ./erp-service
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL: postgresql://invariant:invariant@postgres:5432/erp_db
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      PUBSUB_PROJECT_ID: invariant-local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_started
+    networks:
+      - invariant-net
+
+  shipping-service:
+    build: ./shipping-service
+    ports:
+      - "8004:8004"
+    environment:
+      DATABASE_URL: postgresql://invariant:invariant@postgres:5432/shipping_db
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      PUBSUB_PROJECT_ID: invariant-local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_started
+    networks:
+      - invariant-net
+
+  simulator:
+    build: ./simulator
+    ports:
+      - "8000:8000"
+    environment:
+      ORDER_SERVICE_URL: http://order-service:8001
+      PAYMENT_SERVICE_URL: http://payment-service:8002
+      ERP_SERVICE_URL: http://erp-service:8003
+      SHIPPING_SERVICE_URL: http://shipping-service:8004
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      PUBSUB_PROJECT_ID: invariant-local
+    depends_on:
+      - order-service
+      - payment-service
+      - erp-service
+      - shipping-service
+    networks:
+      - invariant-net
+
+  failure-generator:
+    build: ./failure-generator
+    ports:
+      - "8010:8010"
+    environment:
+      SIMULATOR_URL: http://simulator:8000
+      ORDER_SERVICE_URL: http://order-service:8001
+      PAYMENT_SERVICE_URL: http://payment-service:8002
+      ERP_SERVICE_URL: http://erp-service:8003
+      SHIPPING_SERVICE_URL: http://shipping-service:8004
+    depends_on:
+      - simulator
+    networks:
+      - invariant-net
+
+  invariant-core:
+    build: ./invariant-core
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://invariant:invariant@postgres:5432/invariant_core_db
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      PUBSUB_PROJECT_ID: invariant-local
+      ORDER_SERVICE_URL: http://order-service:8001
+      PAYMENT_SERVICE_URL: http://payment-service:8002
+      ERP_SERVICE_URL: http://erp-service:8003
+      SHIPPING_SERVICE_URL: http://shipping-service:8004
+      SIMULATOR_URL: http://simulator:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_started
+    networks:
+      - invariant-net
+
+  invariant-ai:
+    build: ./invariant-ai
+    ports:
+      - "8090:8090"
+    environment:
+      CORE_API_URL: http://invariant-core:8080
+      SIMULATOR_URL: http://simulator:8000
+    depends_on:
+      - invariant-core
+    networks:
+      - invariant-net
+
+  invariant-recovery:
+    build: ./invariant-recovery
+    ports:
+      - "8095:8095"
+    environment:
+      ORDER_SERVICE_URL: http://order-service:8001
+      PAYMENT_SERVICE_URL: http://payment-service:8002
+      ERP_SERVICE_URL: http://erp-service:8003
+      SHIPPING_SERVICE_URL: http://shipping-service:8004
+    depends_on:
+      - invariant-core
+    networks:
+      - invariant-net
