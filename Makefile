@@ -20,15 +20,15 @@ down:
 
 test:
 	@echo "=== Running Simulator Tests ==="
-	cd simulator && PYTHONPATH=. pytest tests/ -v
+	cd simulator && PYTHONPATH=. python3 -m pytest tests/ -v
 	@echo "=== Running Failure Generator Tests ==="
-	cd failure-generator && PYTHONPATH=. pytest tests/ -v
+	cd failure-generator && PYTHONPATH=. python3 -m pytest tests/ -v
 	@echo "=== Running Invariant Core Tests ==="
-	cd invariant-core && PYTHONPATH=. pytest tests/ -v
+	cd invariant-core && PYTHONPATH=. python3 -m pytest tests/ -v
 	@echo "=== Running Invariant AI Tests ==="
-	cd invariant-ai && PYTHONPATH=. pytest tests/ -v
+	cd invariant-ai && PYTHONPATH=. python3 -m pytest tests/ -v
 	@echo "=== Running Invariant Recovery Tests ==="
-	cd invariant-recovery && PYTHONPATH=. pytest tests/ -v
+	cd invariant-recovery && PYTHONPATH=. python3 -m pytest tests/ -v
 
 benchmark:
 	python3 benchmark/benchmark_runner.py
